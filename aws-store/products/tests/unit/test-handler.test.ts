@@ -1,65 +1,71 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { lambdaHandler } from '../../app';
+import { getProductsList } from '../../getProducts';
 import { expect, describe, it } from '@jest/globals';
+import { products } from '../../mock-data';
+// @ts-ignore
+import { getProductsById } from '../../../.aws-sam/build/GetProductsByIdFunction/getProduct';
 
-describe('Unit test for app handler', function () {
+describe('Unit test for getProductsList handler', function () {
+    it('verifies successful response', async () => {
+        const result: APIGatewayProxyResult = await getProductsList();
+        expect(result.statusCode).toEqual(200);
+        expect(result.body).toEqual(JSON.stringify(products));
+    });
+});
+
+describe('Unit test for getProduct handler', function () {
     it('verifies successful response', async () => {
         const event: APIGatewayProxyEvent = {
-            httpMethod: 'get',
-            body: '',
+            httpMethod: 'GET',
+            body: null,
             headers: {},
             isBase64Encoded: false,
             multiValueHeaders: {},
             multiValueQueryStringParameters: {},
-            path: '/hello',
-            pathParameters: {},
+            path: '/products/7567ec4b-b10c-48c5-9345-fc73c48a80aa',
+            pathParameters: {
+                productId: '7567ec4b-b10c-48c5-9345-fc73c48a80aa',
+            },
             queryStringParameters: {},
             requestContext: {
-                accountId: '123456789012',
-                apiId: '1234',
-                authorizer: {},
-                httpMethod: 'get',
-                identity: {
-                    accessKey: '',
-                    accountId: '',
-                    apiKey: '',
-                    apiKeyId: '',
-                    caller: '',
-                    clientCert: {
-                        clientCertPem: '',
-                        issuerDN: '',
-                        serialNumber: '',
-                        subjectDN: '',
-                        validity: { notAfter: '', notBefore: '' },
-                    },
-                    cognitoAuthenticationProvider: '',
-                    cognitoAuthenticationType: '',
-                    cognitoIdentityId: '',
-                    cognitoIdentityPoolId: '',
-                    principalOrgId: '',
-                    sourceIp: '',
-                    user: '',
-                    userAgent: '',
-                    userArn: '',
-                },
-                path: '/hello',
+                requestId: '7567ec4b-b10c-48c5-9345-fc73c48a80aa',
+                accountId: '',
+                apiId: '',
+                authorizer: undefined,
                 protocol: 'HTTP/1.1',
-                requestId: 'c6af9ac6-7b61-11e6-9a41-93e8deadbeef',
-                requestTimeEpoch: 1428582896000,
-                resourceId: '123456',
-                resourcePath: '/hello',
-                stage: 'dev',
+                httpMethod: 'GET',
+                identity: {
+                    accessKey: null,
+                    accountId: null,
+                    apiKey: null,
+                    apiKeyId: null,
+                    caller: null,
+                    clientCert: null,
+                    cognitoAuthenticationProvider: null,
+                    cognitoAuthenticationType: null,
+                    cognitoIdentityId: null,
+                    cognitoIdentityPoolId: null,
+                    principalOrgId: null,
+                    sourceIp: '127.0.0.1',
+                    user: null,
+                    userAgent: 'jest',
+                    userArn: null,
+                },
+                path: '',
+                stage: '',
+                requestTimeEpoch: 0,
+                resourceId: '',
+                resourcePath: '',
             },
             resource: '',
             stageVariables: {},
         };
-        const result: APIGatewayProxyResult = await lambdaHandler(event);
+
+        const result: APIGatewayProxyResult = await getProductsById(event);
+        const productId = event.pathParameters?.productId;
+        const product = products.find((p) => p.id === productId);
 
         expect(result.statusCode).toEqual(200);
-        expect(result.body).toEqual(
-            JSON.stringify({
-                message: 'hello world',
-            }),
-        );
+        expect(result.body).toEqual(JSON.stringify(product));
     });
 });
