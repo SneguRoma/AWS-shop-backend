@@ -2,19 +2,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { products } from './mock-data';
 
 
-/**
- *
- * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
- * @param {Object} _event - API Gateway Lambda Proxy Input Format
- *
- * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
- * @returns {Object} object - API Gateway Lambda Proxy Output Format
- *
- */
 
-export const getProductsById = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+
+export const getProductById = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
-        const productId = event.pathParameters?.productId;
+        const productId = event.pathParameters?.id;
         if (!productId) {
             return {
                 statusCode: 400,
