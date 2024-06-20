@@ -3,7 +3,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 
 import { Construct } from "constructs";
-import { products } from "../lambda/mock-data";
+import { products } from "../mock-data/mock-data";
 
 export class ProductsServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {

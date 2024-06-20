@@ -1,5 +1,5 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
-import { products } from './mock-data';
+import { products } from '../mock-data/mock-data';
 
 
 
