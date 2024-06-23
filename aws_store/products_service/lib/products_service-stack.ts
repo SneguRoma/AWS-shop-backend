@@ -1,14 +1,30 @@
 import { Duration, Stack, StackProps } from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
-
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import { products } from "../mock-data/mock-data";
 
 export class ProductsServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
-    super(scope, id, props);    
+    super(scope, id, props);
 
+    const productsTableName = "products";
+    const stocksTableName = "stocks";
+
+    const productsTable = dynamodb.Table.fromTableName(
+      this,
+      "productsTable",
+      //process.env.PRODUCTS_TABLE || productsTableName
+      productsTableName
+    );
+
+    const stocksTable = dynamodb.Table.fromTableName(
+      this,
+      "StocksTable",
+      //process.env.STOCKS_TABLE || stocksTableName
+      stocksTableName
+    );
     const getProductListLambda = new lambda.Function(
       this,
       "Get-Products-List-Lambda",
@@ -17,7 +33,8 @@ export class ProductsServiceStack extends Stack {
         code: lambda.Code.fromAsset("lambda"),
         handler: "getProducts.getProductsList",
         environment: {
-          PRODUCTS: JSON.stringify(products),
+          PRODUCTS_TABLE: productsTable.tableName,
+          STOCKS_TABLE: stocksTable.tableName,
         },
       }
     );
@@ -34,6 +51,9 @@ export class ProductsServiceStack extends Stack {
         },
       }
     );
+
+    productsTable.grantReadWriteData(getProductListLambda);
+    stocksTable.grantReadWriteData(getProductListLambda);
 
     const api = new apigw.LambdaRestApi(this, "Endpoint", {
       handler: getProductListLambda,
