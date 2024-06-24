@@ -11,6 +11,8 @@
   "types": "./getProductById.d.ts",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.602.0",
+    "@aws-sdk/lib-dynamodb": "^3.602.0",
     "aws-sdk": "^2.1646.0"
   }
 }

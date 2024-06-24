@@ -11,7 +11,10 @@ export const getProductById = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const productId = event.pathParameters?.id;
+      const productId = event.pathParameters?.id;
+      console.log('productId', productId);
+      console.log('type of productId', (typeof productId));
+
     if (!productId) {
       return {
         statusCode: 400,
@@ -21,10 +24,11 @@ export const getProductById = async (
 
     const productResult = await dynamoDb
       .get({
-        TableName: process.env.PRODUCTS_TABLE || productsTable,
+        TableName:/*  process.env.PRODUCTS_TABLE || */ productsTable,
         Key: { id: productId },
       })
       .promise();
+      console.log('productResult', productResult);
 
     if (!productResult.Item) {
       return {
@@ -34,13 +38,17 @@ export const getProductById = async (
     }
     const stockResult = await dynamoDb
       .get({
-        TableName: process.env.STOCKS_TABLE || stocksTable,
+        TableName: /* process.env.STOCKS_TABLE || */ stocksTable,
         Key: { product_id: productId },
       })
       .promise();
+      console.log('stockResult', stockResult);
 
     const product = productResult.Item;
     const stock = stockResult.Item;
+
+    console.log('product', stockResult);
+    console.log('stock', stock);
 
     return {
       statusCode: 200,
@@ -51,7 +59,7 @@ export const getProductById = async (
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: "Internal server error",
+        message: `"something wrong " error ${err}`,
       }),
     };
   }
