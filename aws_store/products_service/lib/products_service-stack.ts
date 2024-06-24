@@ -47,13 +47,32 @@ export class ProductsServiceStack extends Stack {
         code: lambda.Code.fromAsset("lambda"),
         handler: "getProductById.getProductById",
         environment: {
-          PRODUCTS: JSON.stringify(products),
+          PRODUCTS_TABLE: productsTable.tableName,
+          STOCKS_TABLE: stocksTable.tableName,
+        },
+      }
+    );
+
+    const createProductLambda = new lambda.Function(
+      this,
+      "Create-Product-Lambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        code: lambda.Code.fromAsset("lambda"),
+        handler: "createProduct.createProduct",
+        environment: {
+          PRODUCTS_TABLE: productsTable.tableName,
+          STOCKS_TABLE: stocksTable.tableName,
         },
       }
     );
 
     productsTable.grantReadWriteData(getProductListLambda);
     stocksTable.grantReadWriteData(getProductListLambda);
+    productsTable.grantReadWriteData(getProductByIDLambda);
+    stocksTable.grantReadWriteData(getProductByIDLambda);
+    productsTable.grantReadWriteData(createProductLambda);
+    stocksTable.grantReadWriteData(createProductLambda);
 
     const api = new apigw.LambdaRestApi(this, "Endpoint", {
       handler: getProductListLambda,
@@ -64,6 +83,10 @@ export class ProductsServiceStack extends Stack {
     productsResource.addMethod(
       "GET",
       new apigw.LambdaIntegration(getProductListLambda)
+    );
+    productsResource.addMethod(
+      "POST",
+      new apigw.LambdaIntegration(createProductLambda)
     );
 
     const product = productsResource.addResource("{id}");
