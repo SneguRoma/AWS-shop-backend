@@ -25,7 +25,7 @@
     "@aws-cdk/aws-lambda": "^1.204.0",
     "@aws-cdk/core": "^1.204.0",
     "aws-cdk-lib": "2.145.0",
-    //"aws-sdk": "^2.1645.0",
+    "aws-sdk": "^2.1646.0",
     "constructs": "^10.3.0"
   }
 }

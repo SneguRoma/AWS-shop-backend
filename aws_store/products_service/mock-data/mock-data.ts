@@ -43,4 +43,16 @@ export const products: Product[] = [
         price: 15,
         title: 'ProductName',
     },
+    {
+        description: 'Short Product Description8',
+        id: '6254ec4b-b10c-45c5-9345-fc73c48a80a1',
+        price: 15,
+        title: 'ProductName5555',
+    },
+    {
+        description: 'Short Product Description9',
+        id: '8524ec4b-b10c-45c5-9345-fc73c48a80a1',
+        price: 15,
+        title: 'ProductName7584',
+    }
 ];
