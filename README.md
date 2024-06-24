@@ -9,14 +9,14 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
 ## To Deploy this app
 
-cd products_service
-cdk synth
-cdk diff
-npm run build
+* cd products_service
+* cdk synth
+* cdk diff
+* npm run build
 
 ## To fill Tables run script
 
-ts-node scripts/fillingDynamoDB.ts
+* ts-node scripts/fillingDynamoDB.ts
 
 ## Useful commands
 
