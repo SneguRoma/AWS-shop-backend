@@ -3,27 +3,21 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
-import { products } from "../mock-data/mock-data";
 
 export class ProductsServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const productsTableName = "products";
-    const stocksTableName = "stocks";
-
     const productsTable = dynamodb.Table.fromTableName(
       this,
       "productsTable",
-      //process.env.PRODUCTS_TABLE || productsTableName
-      productsTableName
+      "products"
     );
 
     const stocksTable = dynamodb.Table.fromTableName(
       this,
       "StocksTable",
-      //process.env.STOCKS_TABLE || stocksTableName
-      stocksTableName
+      "stocks"
     );
     const getProductListLambda = new lambda.Function(
       this,
