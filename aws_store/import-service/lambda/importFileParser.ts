@@ -5,7 +5,7 @@ import { Readable } from "stream";
 
 const s3Client = new S3Client({});
 
-export const handler: S3Handler = async (event) => {
+export const importFileParser: S3Handler = async (event) => {
   const bucket = event.Records[0].s3.bucket.name;
   const key = event.Records[0].s3.object.key;
 

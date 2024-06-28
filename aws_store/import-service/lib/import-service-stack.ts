@@ -42,7 +42,7 @@ export class ImportServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset('lambda'),
     });
     
-    existingBucket.grantRead(importFileParserLambda);
+    existingBucket.grantReadWrite(importFileParserLambda);
     existingBucket.addEventNotification(s3.EventType.OBJECT_CREATED_PUT, new s3notifications.LambdaDestination(importFileParserLambda), {
       prefix: 'uploaded/',
     });
