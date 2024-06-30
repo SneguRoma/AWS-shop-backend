@@ -18,7 +18,7 @@ export class ImportServiceStack extends cdk.Stack {
 
     const importProductsFileLambda = new lambda.Function(
       this,
-      "Get-Products-List-Lambda",
+      "importProductsFileLambda",
       {
         runtime: lambda.Runtime.NODEJS_20_X,
         code: lambda.Code.fromAsset("lambda"),
