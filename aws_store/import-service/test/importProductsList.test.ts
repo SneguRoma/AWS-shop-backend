@@ -1,60 +1,79 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
-import { importProductsList } from '../lambda/importProductsList';
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { APIGatewayProxyEvent, Context, APIGatewayProxyResult, Callback } from "aws-lambda";
+import { headers } from "../lambda/constants";
+import { importProductsList } from "../lambda/importProductsList";
 
+jest.mock("@aws-sdk/client-s3");
+jest.mock("@aws-sdk/s3-request-presigner");
 
-const s3Mock = mockClient(S3Client);
+describe("importProductsList", () => {
+  const s3ClientMock = S3Client as jest.MockedClass<typeof S3Client>;
+  const getSignedUrlMock = getSignedUrl as jest.MockedFunction<typeof getSignedUrl>;
 
-describe('importProductsList', () => {
   beforeEach(() => {
-    s3Mock.reset();
+    jest.resetAllMocks();
+    process.env.BUCKET_NAME = "my-test-bucket";
   });
 
-  it('should return a signed URL for a valid file name', async () => {
-   
-    const signedUrl = 'https://example.com/signed-url';
-    (getSignedUrl as jest.Mock).mockResolvedValue(signedUrl);
+  const context: Context = {} as Context;
+  const callback: Callback<APIGatewayProxyResult> = () => {};
 
+  it("should return 400 if file name is not provided", async () => {
     const event = {
-      queryStringParameters: {
-        name: 'test.csv',
-      },
+      queryStringParameters: null,
     } as unknown as APIGatewayProxyEvent;
 
-    const response = await importProductsList(event);
+    const result = await new Promise<APIGatewayProxyResult>((resolve) => {
+      importProductsList(event, context, (error, result) => {
+        if (error) throw error;
+        resolve(result!);
+      });
+    });
 
-    expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ url: signedUrl });
-  });
+    expect(result.statusCode).toBe(400);
+    expect(result.headers).toEqual(headers);
+    expect(JSON.parse(result.body)).toEqual({ message: "File name is required" });
+  }, 10000);
 
-  it('should return a 400 error if file name is missing', async () => {
+  it("should return 200 with signed URL if file name is provided", async () => {
     const event = {
-      queryStringParameters: {},
+      queryStringParameters: { name: "test.csv" },
     } as unknown as APIGatewayProxyEvent;
 
-    const response = await importProductsList(event);
+    const mockSignedUrl = "https://signed-url.com";
+    getSignedUrlMock.mockResolvedValue(mockSignedUrl);
 
-    expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toEqual({ message: 'File name is required' });
-  });
+    const result = await new Promise<APIGatewayProxyResult>((resolve) => {
+      importProductsList(event, context, (error, result) => {
+        if (error) throw error;
+        resolve(result!);
+      });
+    });
 
-  it('should return a 500 error if there is an issue generating the signed URL', async () => {
-    
-    const errorMessage = 'Error generating signed URL';
-    (getSignedUrl as jest.Mock).mockRejectedValue(new Error(errorMessage));
+    expect(result.statusCode).toBe(200);
+    expect(result.headers).toEqual(headers);
+    expect(JSON.parse(result.body)).toEqual({ url: mockSignedUrl });
+    expect(getSignedUrlMock).toHaveBeenCalledTimes(1);
+    expect(getSignedUrlMock).toHaveBeenCalledWith(expect.any(S3Client), expect.any(PutObjectCommand), { expiresIn: 3600 });
+  }, 10000);
 
+  it("should return 500 if there is an error generating signed URL", async () => {
     const event = {
-      queryStringParameters: {
-        name: 'test.csv',
-      },
+      queryStringParameters: { name: "test.csv" },
     } as unknown as APIGatewayProxyEvent;
 
-    const response = await importProductsList(event);
+    getSignedUrlMock.mockRejectedValue(new Error("Error generating signed URL"));
 
-    expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body).message).toBe(errorMessage);
-  });
+    const result = await new Promise<APIGatewayProxyResult>((resolve) => {
+      importProductsList(event, context, (error, result) => {
+        if (error) throw error;
+        resolve(result!);
+      });
+    });
+
+    expect(result.statusCode).toBe(500);
+    expect(result.headers).toEqual(headers);
+    expect(JSON.parse(result.body)).toEqual({ message: "Error generating signed URL", error: "Error generating signed URL" });
+  }, 10000);
 });
