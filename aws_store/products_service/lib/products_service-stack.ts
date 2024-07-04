@@ -75,10 +75,12 @@ export class ProductsServiceStack extends Stack {
       "CatalogBatchProcess",
       {
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: "catalogBatchProcess.handler",
+        handler: "catalogBatchProcess.catalogBatchProcess",
         code: lambda.Code.fromAsset("lambda"),
         environment: {
           CATALOG_ITEMS_QUEUE_URL: catalogItemsQueue.queueUrl,
+          PRODUCTS_TABLE: productsTable.tableName,
+          STOCKS_TABLE: stocksTable.tableName,
         },
       }
     );
