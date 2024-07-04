@@ -1,4 +1,4 @@
-import { Duration, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
@@ -89,6 +89,11 @@ export class ProductsServiceStack extends Stack {
     catalogBatchProcess.addEventSource(new lambdaEventSources.SqsEventSource(catalogItemsQueue, {
       batchSize: 5
     }));
+
+    new CfnOutput(this, 'CatalogItemsQueueUrl', {
+      value: catalogItemsQueue.queueUrl,
+      exportName: 'CatalogItemsQueueUrl',
+    });
     
     productsTable.grantReadWriteData(getProductListLambda);
     stocksTable.grantReadWriteData(getProductListLambda);

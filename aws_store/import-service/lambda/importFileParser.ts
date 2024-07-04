@@ -1,9 +1,12 @@
 import { S3Handler } from "aws-lambda";
 import { S3Client, GetObjectCommand, CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import * as csv from "csv-parser";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { Readable } from "stream";
 
 const s3Client = new S3Client({});
+const sqsClient = new SQSClient({});
+const queueUrl = process.env.CATALOG_ITEMS_QUEUE_URL!;
 
 export const importFileParser: S3Handler = async (event) => {
     
@@ -21,7 +24,16 @@ export const importFileParser: S3Handler = async (event) => {
 
       await new Promise<void>((resolve, reject) => {
         stream.pipe(csv())
-          .on("data", (data) => {
+          .on("data", async (data) => {
+            try {
+              const message = {
+                QueueUrl: queueUrl,
+                MessageBody: JSON.stringify(data),
+              };
+              await sqsClient.send(new SendMessageCommand(message));
+            } catch (error) {
+              console.error("Error sending message to SQS:", error);
+            }
             results.push(data);
             console.log("Parsed data:", data);
           })
