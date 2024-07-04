@@ -2,6 +2,8 @@ import { Duration, Stack, StackProps } from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import { Construct } from "constructs";
 
 export class ProductsServiceStack extends Stack {
@@ -33,6 +35,7 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    
     const getProductByIDLambda = new lambda.Function(
       this,
       "Get-Product-BY-ID-Lambda",
@@ -47,6 +50,7 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    
     const createProductLambda = new lambda.Function(
       this,
       "Create-Product-Lambda",
@@ -61,12 +65,36 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    const catalogItemsQueue = new sqs.Queue(this, "CatalogItemsQueue", {
+      queueName: "catalog-items-queue",
+      visibilityTimeout: Duration.seconds(300),
+    });
+
+    const catalogBatchProcess = new lambda.Function(
+      this,
+      "CatalogBatchProcess",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "catalogBatchProcess.handler",
+        code: lambda.Code.fromAsset("lambda"),
+        environment: {
+          CATALOG_ITEMS_QUEUE_URL: catalogItemsQueue.queueUrl,
+        },
+      }
+    );
+
+    
+    catalogBatchProcess.addEventSource(new lambdaEventSources.SqsEventSource(catalogItemsQueue, {
+      batchSize: 5
+    }));
+    
     productsTable.grantReadWriteData(getProductListLambda);
     stocksTable.grantReadWriteData(getProductListLambda);
     productsTable.grantReadWriteData(getProductByIDLambda);
     stocksTable.grantReadWriteData(getProductByIDLambda);
     productsTable.grantReadWriteData(createProductLambda);
     stocksTable.grantReadWriteData(createProductLambda);
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
 
     const api = new apigw.LambdaRestApi(this, "Endpoint", {
       handler: getProductListLambda,
