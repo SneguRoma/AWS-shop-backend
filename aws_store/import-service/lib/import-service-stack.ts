@@ -36,8 +36,9 @@ export class ImportServiceStack extends cdk.Stack {
       restApiName: "Import Service",
     });
     const importResource = api.root.addResource("import");
-    const catalogItemsQueueUrl = cdk.Fn.importValue('CatalogItemsQueueUrl');
-    
+    const catalogItemsQueueUrl = cdk.Fn.importValue('CatalogItemsQueueUrl') || "https://sqs.eu-west-1.amazonaws.com/471112801041/catalog-items-queue";
+    const catalogItemsQueueArn = cdk.Fn.importValue('CatalogItemsQueueArn');
+
     const importFileParserLambda = new lambda.Function(this, 'importFileParserLambda', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'importFileParser.importFileParser',
@@ -53,7 +54,7 @@ export class ImportServiceStack extends cdk.Stack {
     });
     const sqsPolicyStatement = new PolicyStatement({
       actions: ['sqs:SendMessage'],
-      resources: [catalogItemsQueueUrl],
+      resources:  [catalogItemsQueueArn],
     });
 
     importFileParserLambda.addToRolePolicy(sqsPolicyStatement);

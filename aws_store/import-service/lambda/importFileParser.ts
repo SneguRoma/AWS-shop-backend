@@ -24,26 +24,34 @@ export const importFileParser: S3Handler = async (event) => {
 
       await new Promise<void>((resolve, reject) => {
         stream.pipe(csv())
-          .on("data", async (data) => {
-            try {
-              const message = {
-                QueueUrl: queueUrl,
-                MessageBody: JSON.stringify(data),
-              };
-              await sqsClient.send(new SendMessageCommand(message));
-            } catch (error) {
-              console.error("Error sending message to SQS:", error);
-            }
+        .on("data", (data) => {
             results.push(data);
-            console.log("Parsed data:", data);
-          })
-          .on("end", () => {
+        })
+        .on("end", async () => {
             console.log("File parsed successfully");
+
+            for (const record of results) {
+              console.log('record',record)
+                const params = {
+                    QueueUrl: queueUrl,
+                    MessageBody: JSON.stringify(record)
+                };
+
+                try {
+                    const sendMessageCommand = new SendMessageCommand(params);
+                    console.log('sendMessageCommand',sendMessageCommand)
+                    await sqsClient.send(sendMessageCommand);
+                    console.log("Message sent to SQS:", JSON.stringify(record));
+                } catch (error) {
+                    console.error("Error sending message to SQS:", error);
+                }
+            }
+
             resolve();
-          })
-          .on("error", (error) => {
+        })
+        .on("error", (error) => {
             reject(error);
-          });
+        });
       });
 
       const newKey = key.replace('uploaded/', 'parsed/');
