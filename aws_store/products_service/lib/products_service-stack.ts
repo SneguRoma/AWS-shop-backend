@@ -6,7 +6,10 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import { config } from 'dotenv';
 import { Construct } from "constructs";
+
+config();
 
 export class ProductsServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
