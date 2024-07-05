@@ -1,5 +1,4 @@
 import { APIGatewayProxyResult } from "aws-lambda";
-import { products } from "../mock-data/mock-data";
 import * as AWS from "aws-sdk";
 import { headers, productsTable, stocksTable } from "./constants";
 

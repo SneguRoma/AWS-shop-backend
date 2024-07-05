@@ -5,7 +5,8 @@ import { productsTable, stocksTable } from "./constants";
 
 export const catalogBatchProcess: SQSHandler = async (event) => {
   for (const record of event.Records) {
-    const product = JSON.parse(record.body);
+    const product = record.body;
+
     await createProductByBody(
       product,
       process.env.PRODUCTS_TABLE || productsTable,

@@ -94,6 +94,11 @@ export class ProductsServiceStack extends Stack {
       value: catalogItemsQueue.queueUrl,
       exportName: 'CatalogItemsQueueUrl',
     });
+
+    new CfnOutput(this, 'CatalogItemsQueueArn', {
+      value: catalogItemsQueue.queueArn,
+      exportName: 'CatalogItemsQueueArn',
+    });
     
     productsTable.grantReadWriteData(getProductListLambda);
     stocksTable.grantReadWriteData(getProductListLambda);
@@ -102,6 +107,8 @@ export class ProductsServiceStack extends Stack {
     productsTable.grantReadWriteData(createProductLambda);
     stocksTable.grantReadWriteData(createProductLambda);
     catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+    productsTable.grantReadWriteData(catalogBatchProcess);
+    stocksTable.grantReadWriteData(catalogBatchProcess);
 
     const api = new apigw.LambdaRestApi(this, "Endpoint", {
       handler: getProductListLambda,
@@ -114,7 +121,7 @@ export class ProductsServiceStack extends Stack {
       new apigw.LambdaIntegration(getProductListLambda)
     );
     productsResource.addMethod(
-      "POST",
+      "PUT",
       new apigw.LambdaIntegration(createProductLambda)
     );
 
