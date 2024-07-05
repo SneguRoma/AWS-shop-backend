@@ -68,7 +68,7 @@ export class ProductsServiceStack extends Stack {
     );
 
     const createProductTopic = new sns.Topic(this, 'CreateProductTopic');
-    const email = 'neskaju@gmail.com';
+    const email = process.env.EMAIL || ''
     createProductTopic.addSubscription(new subscriptions.EmailSubscription(email));
 
     const catalogItemsQueue = new sqs.Queue(this, "CatalogItemsQueue", {
