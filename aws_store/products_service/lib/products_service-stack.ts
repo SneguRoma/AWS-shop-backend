@@ -4,6 +4,8 @@ import * as apigw from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from "constructs";
 
 export class ProductsServiceStack extends Stack {
@@ -65,6 +67,10 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    const createProductTopic = new sns.Topic(this, 'CreateProductTopic');
+    const email = 'neskaju@gmail.com';
+    createProductTopic.addSubscription(new subscriptions.EmailSubscription(email));
+
     const catalogItemsQueue = new sqs.Queue(this, "CatalogItemsQueue", {
       queueName: "catalog-items-queue",
       visibilityTimeout: Duration.seconds(300),
@@ -81,11 +87,12 @@ export class ProductsServiceStack extends Stack {
           CATALOG_ITEMS_QUEUE_URL: catalogItemsQueue.queueUrl,
           PRODUCTS_TABLE: productsTable.tableName,
           STOCKS_TABLE: stocksTable.tableName,
+          CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn,
         },
       }
     );
 
-    
+    createProductTopic.grantPublish(catalogBatchProcess);
     catalogBatchProcess.addEventSource(new lambdaEventSources.SqsEventSource(catalogItemsQueue, {
       batchSize: 5
     }));
