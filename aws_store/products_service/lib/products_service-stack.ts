@@ -72,7 +72,16 @@ export class ProductsServiceStack extends Stack {
 
     const createProductTopic = new sns.Topic(this, 'CreateProductTopic');
     const email = process.env.EMAIL || ''
-    createProductTopic.addSubscription(new subscriptions.EmailSubscription(email));
+    createProductTopic.addSubscription(new subscriptions.EmailSubscription(email, {
+      filterPolicy: {
+        category: sns.SubscriptionFilter.stringFilter({
+          allowlist: ['electronics'],
+        }),
+        price: sns.SubscriptionFilter.numericFilter({
+          between: { start: 100, stop: 500 }
+        }),
+      },
+    }));
 
     const catalogItemsQueue = new sqs.Queue(this, "CatalogItemsQueue", {
       queueName: "catalog-items-queue",
