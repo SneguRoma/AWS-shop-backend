@@ -1,8 +1,15 @@
-import { Duration, Stack, StackProps } from "aws-cdk-lib";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import { config } from 'dotenv';
 import { Construct } from "constructs";
+
+config();
 
 export class ProductsServiceStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -33,6 +40,7 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    
     const getProductByIDLambda = new lambda.Function(
       this,
       "Get-Product-BY-ID-Lambda",
@@ -47,6 +55,7 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    
     const createProductLambda = new lambda.Function(
       this,
       "Create-Product-Lambda",
@@ -61,12 +70,64 @@ export class ProductsServiceStack extends Stack {
       }
     );
 
+    const createProductTopic = new sns.Topic(this, 'CreateProductTopic');
+    const email = process.env.EMAIL || ''
+    createProductTopic.addSubscription(new subscriptions.EmailSubscription(email, {
+      filterPolicy: {
+        category: sns.SubscriptionFilter.stringFilter({
+          allowlist: ['electronics'],
+        }),
+        price: sns.SubscriptionFilter.numericFilter({
+          between: { start: 100, stop: 500 }
+        }),
+      },
+    }));
+
+    const catalogItemsQueue = new sqs.Queue(this, "CatalogItemsQueue", {
+      queueName: "catalog-items-queue",
+      visibilityTimeout: Duration.seconds(300),
+    });
+
+    const catalogBatchProcess = new lambda.Function(
+      this,
+      "CatalogBatchProcess",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "catalogBatchProcess.catalogBatchProcess",
+        code: lambda.Code.fromAsset("lambda"),
+        environment: {
+          CATALOG_ITEMS_QUEUE_URL: catalogItemsQueue.queueUrl,
+          PRODUCTS_TABLE: productsTable.tableName,
+          STOCKS_TABLE: stocksTable.tableName,
+          CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn,
+        },
+      }
+    );
+
+    createProductTopic.grantPublish(catalogBatchProcess);
+    catalogBatchProcess.addEventSource(new lambdaEventSources.SqsEventSource(catalogItemsQueue, {
+      batchSize: 5
+    }));
+
+    new CfnOutput(this, 'CatalogItemsQueueUrl', {
+      value: catalogItemsQueue.queueUrl,
+      exportName: 'CatalogItemsQueueUrl',
+    });
+
+    new CfnOutput(this, 'CatalogItemsQueueArn', {
+      value: catalogItemsQueue.queueArn,
+      exportName: 'CatalogItemsQueueArn',
+    });
+    
     productsTable.grantReadWriteData(getProductListLambda);
     stocksTable.grantReadWriteData(getProductListLambda);
     productsTable.grantReadWriteData(getProductByIDLambda);
     stocksTable.grantReadWriteData(getProductByIDLambda);
     productsTable.grantReadWriteData(createProductLambda);
     stocksTable.grantReadWriteData(createProductLambda);
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+    productsTable.grantReadWriteData(catalogBatchProcess);
+    stocksTable.grantReadWriteData(catalogBatchProcess);
 
     const api = new apigw.LambdaRestApi(this, "Endpoint", {
       handler: getProductListLambda,
@@ -79,7 +140,7 @@ export class ProductsServiceStack extends Stack {
       new apigw.LambdaIntegration(getProductListLambda)
     );
     productsResource.addMethod(
-      "POST",
+      "PUT",
       new apigw.LambdaIntegration(createProductLambda)
     );
 
