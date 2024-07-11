@@ -47,7 +47,14 @@ export class ImportServiceStack extends cdk.Stack {
         CATALOG_ITEMS_QUEUE_URL: catalogItemsQueueUrl,
       }
     });
-    
+
+    const authorizerFunctionArn = cdk.Fn.importValue('BasicAuthorizerArn');
+    const authorizerFunction = lambda.Function.fromFunctionArn(this, 'BasicAuthorizer', authorizerFunctionArn);
+
+    const auth = new apigw.TokenAuthorizer(this, 'TokenAuthorizer', {
+      handler: authorizerFunction,
+    });
+
     existingBucket.grantReadWrite(importFileParserLambda);
     existingBucket.addEventNotification(s3.EventType.OBJECT_CREATED_PUT, new s3notifications.LambdaDestination(importFileParserLambda), {
       prefix: 'uploaded/',
@@ -62,7 +69,11 @@ export class ImportServiceStack extends cdk.Stack {
     
     importResource.addMethod(
       "GET",
-      new apigw.LambdaIntegration(importProductsFileLambda)
+      new apigw.LambdaIntegration(importProductsFileLambda),
+       {
+        authorizer: auth,
+        authorizationType: apigw.AuthorizationType.CUSTOM,
+      }
     );
     
   }

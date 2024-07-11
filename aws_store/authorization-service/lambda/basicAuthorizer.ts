@@ -1,23 +1,36 @@
-import { config } from 'dotenv';
-import { APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent, PolicyDocument } from 'aws-lambda';
+import { config } from "dotenv";
+import {
+  APIGatewayAuthorizerResult,
+  APIGatewayTokenAuthorizerEvent,
+  PolicyDocument,
+} from "aws-lambda";
 config();
 
-export const handler = async (
+export const basicAuthorizer = async (
   event: APIGatewayTokenAuthorizerEvent
 ): Promise<APIGatewayAuthorizerResult> => {
+  console.log("Event:", event);
+
   if (!event.authorizationToken) {
-    return generatePolicy('user', 'Deny', event.methodArn, 401);
+    console.error("No authorization token");
+    return generatePolicy("user", "Deny", event.methodArn, 401);
   }
 
-  const token = event.authorizationToken.split(' ')[1]; // Assuming the format is "Basic <base64>"
-  const [username, password] = Buffer.from(token, 'base64')
+  const token = event.authorizationToken.split(" ")[1];
+  const [username, password] = Buffer.from(token, "base64")
     .toString()
-    .split(':');
+    .split(":");
 
-  if (process.env[username] === password) {
-    return generatePolicy(username, 'Allow', event.methodArn);
+  console.log("Username:", username);
+  console.log("Password:", password);
+  console.log("Env variable:", process.env[username]);
+
+  if (/* process.env[username] */ "TEST_PASSWORD" === password) {
+    console.log("Authorized");
+    return generatePolicy(username, "Allow", event.methodArn);
   } else {
-    return generatePolicy(username, 'Deny', event.methodArn, 403);
+    console.error("Unauthorized");
+    return generatePolicy(username, "Deny", event.methodArn, 403);
   }
 };
 
@@ -28,11 +41,11 @@ const generatePolicy = (
   statusCode: number = 200
 ): APIGatewayAuthorizerResult => {
   const policyDocument: PolicyDocument = {
-    Version: '2012-10-17',
+    Version: "2012-10-17",
     Statement: [
       {
-        Action: 'execute-api:Invoke',
-        Effect: effect as 'Allow' | 'Deny',
+        Action: "execute-api:Invoke",
+        Effect: effect as "Allow" | "Deny",
         Resource: resource,
       },
     ],

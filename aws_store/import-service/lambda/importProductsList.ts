@@ -8,6 +8,7 @@ const bucketName = process.env.BUCKET_NAME!;
 
 export const importProductsList: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent) => {
     const fileName = event.queryStringParameters?.name;
+    console.log("event", event);
   
     if (!fileName) {
       return {
