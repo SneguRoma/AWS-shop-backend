@@ -41,12 +41,7 @@ export class AuthorizationServiceStack extends cdk.Stack {
       role: lambdaRole,
     });
 
-    /* const lambdaPolicy = new iam.PolicyStatement({
-      actions: ['execute-api:Invoke'],
-      resources: [basicAuthorizer.functionArn],
-    });
-
-    basicAuthorizer.addToRolePolicy(lambdaPolicy); */
+    
     const apiGatewayInvokePermission = new lambda.CfnPermission(
       this,
       "ApiGatewayInvokePermission",

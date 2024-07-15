@@ -18,7 +18,7 @@ export const basicAuthorizer = async (
 
   const token = event.authorizationToken.split(" ")[1];
   const [username, password] = Buffer.from(token, "base64")
-    .toString()
+    .toString('utf-8')
     .split(":");
 
   console.log("Username:", username);
