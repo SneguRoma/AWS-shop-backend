@@ -1,0 +1,115 @@
+{
+    "test_products_store": [
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "1"},
+            "product_title": {"S": "Apple"},
+            "category": {"S": "Fruit"},
+            "price": {"N": "0.50"},
+            "stock": {"N": "100"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "2"},
+            "product_title": {"S": "Banana"},
+            "category": {"S": "Fruit"},
+            "price": {"N": "0.30"},
+            "stock": {"N": "120"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "3"},
+            "product_title": {"S": "Orange"},
+            "category": {"S": "Fruit"},
+            "price": {"N": "0.60"},
+            "stock": {"N": "80"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "4"},
+            "product_title": {"S": "Broccoli"},
+            "category": {"S": "Vegetable"},
+            "price": {"N": "1.20"},
+            "stock": {"N": "50"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "5"},
+            "product_title": {"S": "Carrot"},
+            "category": {"S": "Vegetable"},
+            "price": {"N": "0.80"},
+            "stock": {"N": "200"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "6"},
+            "product_title": {"S": "Bread"},
+            "category": {"S": "Bakery"},
+            "price": {"N": "1.50"},
+            "stock": {"N": "30"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "7"},
+            "product_title": {"S": "Milk"},
+            "category": {"S": "Dairy"},
+            "price": {"N": "1.00"},
+            "stock": {"N": "40"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "8"},
+            "product_title": {"S": "Cheese"},
+            "category": {"S": "Dairy"},
+            "price": {"N": "2.50"},
+            "stock": {"N": "25"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "9"},
+            "product_title": {"S": "Chicken"},
+            "category": {"S": "Meat"},
+            "price": {"N": "5.00"},
+            "stock": {"N": "15"}
+          }
+        }
+      },
+      {
+        "PutRequest": {
+          "Item": {
+            "id": {"N": "10"},
+            "product_title": {"S": "Beef"},
+            "category": {"S": "Meat"},
+            "price": {"N": "7.00"},
+            "stock": {"N": "10"}
+          }
+        }
+      }
+    ]
+  }
+  
