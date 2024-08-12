@@ -1,59 +1,77 @@
-import http, { IncomingMessage, ServerResponse } from 'http';
-import { URL } from 'url';
-import { request } from './utils';
-import dotenv from 'dotenv';
+import http from "http";
+import https from "https";
+import { URL } from "url";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const serviceUrls: { [key: string]: string } = {
-    product: process.env.PRODUCT_SERVICE_URL || "https://ads3jrnqm8.execute-api.eu-west-1.amazonaws.com/prod/products",
-    cart: process.env.CART_SERVICE_URL || "   "
-};
-
-const requestHandler = async (req: IncomingMessage, res: ServerResponse) => {
-    if (req.url === '/favicon.ico') {
-        res.writeHead(204); // No Content
-        res.end();
-        return;
-    }
-
-    const parsedUrl = new URL(req.url || '', `http://${req.headers.host}`);
-    const serviceName = parsedUrl.pathname.split('/')[1];
-    const serviceUrl = serviceUrls[serviceName || ''];
-
-    console.log("parsedUrl", parsedUrl);
-    console.log("serviceName", serviceName);
-    console.log("serviceUrl", serviceUrl);
-
-    if (!serviceUrl) {
-        res.writeHead(502, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Cannot process request' }));
-        return;
-    }
-
-    const serviceParsedUrl = new URL(serviceUrl + parsedUrl.pathname + parsedUrl.search);
-    const options = {
-        protocol: serviceParsedUrl.protocol,
-        hostname: serviceParsedUrl.hostname,
-        port: serviceParsedUrl.port,
-        path: serviceParsedUrl.pathname + serviceParsedUrl.search,
-        method: req.method,
-        headers: req.headers as http.OutgoingHttpHeaders
-    };
-
-    try {
-        const data = await request(options, req.method === 'POST' || req.method === 'PUT' ? req : undefined);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(data);
-    } catch (err) {
-        res.writeHead(502, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Error processing request' }));
-    }
-};
-
-const server = http.createServer(requestHandler);
-
 const PORT = process.env.PORT || 3001;
+const SERVICES: { [key: string]: string | undefined } = {
+  product: process.env.PRODUCT_SERVICE_URL,
+  cart: process.env.CART_SERVICE_URL,
+};
+
+const server = http.createServer((req, res) => {
+  if (req.url === "/favicon.ico") {
+    res.writeHead(204); // No Content
+    res.end();
+    return;
+  }
+
+  const parsedUrl = new URL(req.url || "", `http://${req.headers.host}`);
+  const pathSegments = parsedUrl.pathname?.split("/").filter(Boolean) || [];
+
+  if (pathSegments.length < 1) {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Invalid request" }));
+    return;
+  }
+
+  const serviceName = pathSegments[0];
+  const serviceUrl = SERVICES[serviceName];
+
+  if (!serviceUrl) {
+    res.writeHead(502, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Cannot process request" }));
+    return;
+  }
+
+  const targetUrl = new URL(serviceUrl);
+
+  if (targetUrl.pathname !== "/" && targetUrl.pathname.endsWith("/")) {
+    targetUrl.pathname = "";
+  }
+  if (pathSegments.length > 1) {
+    if (!targetUrl.pathname.endsWith("/")) targetUrl.pathname += "/";
+    targetUrl.pathname += pathSegments.slice(1).join("/");
+  }
+
+  targetUrl.search = parsedUrl.search || "";
+
+  const options = {
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: targetUrl.host,
+    },
+  };
+
+  const protocol = targetUrl.protocol === "https:" ? https : http;
+
+  const proxyReq = protocol.request(targetUrl, options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+
+  req.pipe(proxyReq);
+
+  proxyReq.on("error", (error) => {
+    console.error("Request error:", error);
+    res.writeHead(502, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Cannot process request" }));
+  });
+});
+
 server.listen(PORT, () => {
-    console.log(`BFF service listening at ${PORT} port`);
+  console.log(`BFF Service is running on port ${PORT}`);
 });
